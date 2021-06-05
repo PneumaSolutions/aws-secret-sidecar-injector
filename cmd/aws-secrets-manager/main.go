@@ -61,13 +61,16 @@ func main() {
 			// Message from an error.
 			log.Println(err.Error())
 		}
-		return
+		os.Exit(1)
 	}
 	// Decrypts secret using the associated KMS CMK.
 	if result.SecretString != nil {
-		writeStringOutput(*result.SecretString, secretFilename)
+		err = writeStringOutput(*result.SecretString, secretFilename)
 	} else {
-		writeBinaryOutput(result.SecretBinary, secretFilename)
+		err = writeBinaryOutput(result.SecretBinary, secretFilename)
+	}
+	if err != nil {
+		log.Panic(err)
 	}
 }
 func createSecretFile(name string) (f *os.File, err error) {
