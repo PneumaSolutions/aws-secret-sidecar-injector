@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -65,23 +64,13 @@ func main() {
 		return
 	}
 	// Decrypts secret using the associated KMS CMK.
-	// Depending on whether the secret is a string or binary, one of these fields will be populated.
-	var secretString, decodedBinarySecret string
 	if result.SecretString != nil {
-		secretString = *result.SecretString
-		writeOutput(secretString, secretFilename)
+		writeStringOutput(*result.SecretString, secretFilename)
 	} else {
-		decodedBinarySecretBytes := make([]byte, base64.StdEncoding.DecodedLen(len(result.SecretBinary)))
-		len, err := base64.StdEncoding.Decode(decodedBinarySecretBytes, result.SecretBinary)
-		if err != nil {
-			log.Println("Base64 Decode Error:", err)
-			return
-		}
-		decodedBinarySecret = string(decodedBinarySecretBytes[:len])
-		writeOutput(decodedBinarySecret, secretFilename)
+		writeBinaryOutput(result.SecretBinary, secretFilename)
 	}
 }
-func writeOutput(output string, name string) error {
+func writeStringOutput(output string, name string) error {
 	mountPoint := "/tmp"
 	dir, file := filepath.Split(name)
 	if file == "" {
@@ -98,6 +87,27 @@ func writeOutput(output string, name string) error {
 			return fmt.Errorf("error creating file, %w", err)
 		}
 		f.WriteString(output)
+		return nil
+	}
+	return fmt.Errorf("not a valid file path")
+}
+func writeBinaryOutput(output []byte, name string) error {
+	mountPoint := "/tmp"
+	dir, file := filepath.Split(name)
+	if file == "" {
+		file = "secret"
+	}
+	err := os.MkdirAll(mountPoint + dir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("error creating directory, %w", err)
+	}
+	if filepath.IsAbs(filepath.Join(mountPoint + dir, file)) {
+		f, err := os.Create(filepath.Join(mountPoint + dir, file))
+		defer f.Close()
+		if err != nil {
+			return fmt.Errorf("error creating file, %w", err)
+		}
+		f.Write(output)
 		return nil
 	}
 	return fmt.Errorf("not a valid file path")
