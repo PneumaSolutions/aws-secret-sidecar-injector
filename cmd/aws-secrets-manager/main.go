@@ -70,45 +70,40 @@ func main() {
 		writeBinaryOutput(result.SecretBinary, secretFilename)
 	}
 }
-func writeStringOutput(output string, name string) error {
+func createSecretFile(name string) (f *os.File, err error) {
 	mountPoint := "/tmp"
 	dir, file := filepath.Split(name)
 	if file == "" {
 		file = "secret"
 	}
-	err := os.MkdirAll(mountPoint + dir, os.ModePerm)
+	err = os.MkdirAll(mountPoint+dir, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("error creating directory, %w", err)
+		return nil, fmt.Errorf("error creating directory, %w", err)
 	}
-	if filepath.IsAbs(filepath.Join(mountPoint + dir, file)) {
-		f, err := os.Create(filepath.Join(mountPoint + dir, file))
-		defer f.Close()
-		if err != nil {
-			return fmt.Errorf("error creating file, %w", err)
-		}
-		f.WriteString(output)
-		return nil
+	if !filepath.IsAbs(filepath.Join(mountPoint+dir, file)) {
+		return nil, fmt.Errorf("not a valid file path")
 	}
-	return fmt.Errorf("not a valid file path")
+	f, err = os.Create(filepath.Join(mountPoint+dir, file))
+	if err != nil {
+		return nil, fmt.Errorf("error creating file, %w", err)
+	}
+	return f, nil
+}
+func writeStringOutput(output string, name string) error {
+	f, err := createSecretFile(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	f.WriteString(output)
+	return nil
 }
 func writeBinaryOutput(output []byte, name string) error {
-	mountPoint := "/tmp"
-	dir, file := filepath.Split(name)
-	if file == "" {
-		file = "secret"
-	}
-	err := os.MkdirAll(mountPoint + dir, os.ModePerm)
+	f, err := createSecretFile(name)
 	if err != nil {
-		return fmt.Errorf("error creating directory, %w", err)
+		return err
 	}
-	if filepath.IsAbs(filepath.Join(mountPoint + dir, file)) {
-		f, err := os.Create(filepath.Join(mountPoint + dir, file))
-		defer f.Close()
-		if err != nil {
-			return fmt.Errorf("error creating file, %w", err)
-		}
-		f.Write(output)
-		return nil
-	}
-	return fmt.Errorf("not a valid file path")
+	defer f.Close()
+	f.Write(output)
+	return nil
 }
