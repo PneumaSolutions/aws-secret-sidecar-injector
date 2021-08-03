@@ -1,15 +1,12 @@
-FROM amazonlinux AS build
-RUN yum -y update && yum -y install tar gzip
-RUN curl -o go1.14.3.linux-amd64.tar.gz https://dl.google.com/go/go1.14.3.linux-amd64.tar.gz -s
-RUN tar -C /usr/local -xzf go1.14.3.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
+FROM golang:1.16.6-alpine3.14@sha256:bc2db47c5f4a682f1315e0d484811d65bf094d3bcd824459b170714c91656190 AS build
+ENV CGO_ENABLED=0
 WORKDIR /src/aws-secrets-manager
 COPY ./go.mod ./go.sum ./
 RUN go mod download
 COPY . ./
 RUN go build -o /app -v ./cmd/aws-secrets-manager
 
-FROM amazonlinux:latest
-RUN yum -y update && yum install -y ca-certificates && rm -rf /var/cache/yum/*
+FROM scratch
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /app /.
 ENTRYPOINT ["/app"]
