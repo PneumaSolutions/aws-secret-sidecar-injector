@@ -74,7 +74,7 @@ func main() {
 	}
 }
 func createSecretFile(name string) (f *os.File, err error) {
-	mountPoint := "/tmp"
+	mountPoint := os.Getenv("MOUNT_POINT")
 	dir, file := filepath.Split(name)
 	if file == "" {
 		file = "secret"

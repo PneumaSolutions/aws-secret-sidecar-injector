@@ -7,6 +7,7 @@ COPY . ./
 RUN go build -o /app -v ./cmd/aws-secrets-manager
 
 FROM scratch
+ENV MOUNT_POINT=/tmp
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /app /.
 ENTRYPOINT ["/app"]

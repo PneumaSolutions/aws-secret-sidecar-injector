@@ -6,5 +6,6 @@ COPY . ./
 RUN go build -o /app.exe -v ./cmd/aws-secrets-manager
 
 FROM mcr.microsoft.com/windows/servercore:ltsc2019
+ENV MOUNT_POINT=C:/tmp
 COPY --from=build /app.exe /.
 CMD ["/app.exe"]
