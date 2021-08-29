@@ -1,10 +1,10 @@
-FROM golang:1.17.0-nanoserver-1809@sha256:ae7d527b4290871ade02945c9ba7d6489fb7633bffa9f4390843a7fed3abde30 AS build
+FROM golang:1.17.0-windowsservercore-1809 AS build
 WORKDIR /src/aws-secrets-manager
 COPY ./go.mod ./go.sum ./
 RUN go mod download
 COPY . ./
 RUN go build -o /app.exe -v ./cmd/aws-secrets-manager
 
-FROM mcr.microsoft.com/windows/nanoserver:1809@sha256:bf497134e6b9f1c0b0bcd677cff79f7fae6e545e5a6bf0198676b3b6eede1a64
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
 COPY --from=build /app.exe /.
 CMD ["/app.exe"]
