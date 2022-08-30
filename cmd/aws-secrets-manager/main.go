@@ -86,9 +86,21 @@ func createSecretFile(name string) (f *os.File, err error) {
 	if !filepath.IsAbs(filepath.Join(mountPoint+dir, file)) {
 		return nil, fmt.Errorf("not a valid file path")
 	}
-	f, err = os.Create(filepath.Join(mountPoint+dir, file))
+	path := filepath.Join(mountPoint+dir, file)
+	f, err = os.Create(path)
 	if err != nil {
 		return nil, fmt.Errorf("error creating file, %w", err)
+	}
+	if os.Getenv("APP_PRIVATE") != "" {
+		// Make the file readable only by an "app" user with uid/gid of 1000/1000
+		err = os.Chown(path, 1000, 1000)
+		if err != nil {
+			log.Panic(err)
+		}
+		err = os.Chmod(path, 0600)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 	return f, nil
 }
